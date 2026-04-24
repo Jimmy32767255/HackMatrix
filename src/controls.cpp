@@ -839,3 +839,13 @@ Controls::applyLookDelta(double dx, double dy)
     renderer->getCamera()->handleRotateForce(nullptr, dx, dy);
   }
 }
+
+void
+Controls::handleScroll(double delta)
+{
+  if (!camera || !keysEnabled) {
+    return;
+  }
+  float speedDelta = delta * 0.005f;
+  camera->changeSpeed(speedDelta);
+}

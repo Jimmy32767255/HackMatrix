@@ -333,6 +333,16 @@ handle_pointer_axis(wl_listener* listener, void* data)
     preferred_surface = picked.first;
   }
   ensure_pointer_focus(handle->server, event->time_msec, preferred_surface);
+
+  Controls* controls = handle->server && handle->server->engine
+                         ? handle->server->engine->getControls()
+                         : nullptr;
+  bool wayland_focused = handle->server && handle->server->seat &&
+                         handle->server->seat->pointer_state.focused_surface != nullptr;
+  if (controls && !wayland_focused) {
+    controls->handleScroll(event->delta);
+  }
+
   if (handle->server && handle->server->seat) {
     wlr_seat_pointer_notify_axis(handle->server->seat,
                                  event->time_msec,
