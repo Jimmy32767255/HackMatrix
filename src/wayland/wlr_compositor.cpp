@@ -1191,7 +1191,7 @@ apply_backend_env_defaults()
   }
 
   // For the X11 backend, wlroots expects an explicit output size. Provide one
-  // (default 1920x1080) unless the user already set WLR_X11_OUTPUT_*.
+  // (default from config or 1920x1080) unless the user already set WLR_X11_OUTPUT_*.
   const char* backends_env = std::getenv("WLR_BACKENDS");
   bool likely_x11 = (backends_env && std::string(backends_env).find("x11") != std::string::npos) ||
                     (!std::getenv("WAYLAND_DISPLAY") && std::getenv("DISPLAY"));
@@ -1199,12 +1199,27 @@ apply_backend_env_defaults()
     if (!std::getenv("WLR_X11_OUTPUT_WIDTH") || !std::getenv("WLR_X11_OUTPUT_HEIGHT")) {
       int width = 1920;
       int height = 1080;
-      if (const char* w_env = std::getenv("SCREEN_WIDTH")) {
-        width = std::max(1, std::atoi(w_env));
+      bool allowEnvOverride = false;
+
+      // First try config file (highest priority)
+      try {
+        width = Config::singleton()->get<int>("window.width");
+        height = Config::singleton()->get<int>("window.height");
+        allowEnvOverride = Config::singleton()->get<bool>("window.allow_env_override");
+      } catch (...) {
+        // Config not found, use defaults
       }
-      if (const char* h_env = std::getenv("SCREEN_HEIGHT")) {
-        height = std::max(1, std::atoi(h_env));
+
+      // Then check environment variables (only if allowed by config)
+      if (allowEnvOverride) {
+        if (const char* w_env = std::getenv("SCREEN_WIDTH")) {
+          width = std::max(1, std::atoi(w_env));
+        }
+        if (const char* h_env = std::getenv("SCREEN_HEIGHT")) {
+          height = std::max(1, std::atoi(h_env));
+        }
       }
+
       char buf[32];
       std::snprintf(buf, sizeof(buf), "%d", width);
       setenv("WLR_X11_OUTPUT_WIDTH", buf, 1);

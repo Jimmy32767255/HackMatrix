@@ -2,13 +2,17 @@ database_file: "./db/matrix.db"
 menu_program: "wofi --show drun"
 fov: 45.0
 zFar: 400.0
+window:
+  width: 1920
+  height: 1080
+  allow_env_override: false
 background:
   enabled: false
   model_path: "models/background.obj"
   position: [0, 0, -10]
   scale: 1.0
 backface_texture:
-  enabled: false
+  enabled: true
   texture_path: "images/backface.png"
 environment:
   dark_mode: true
