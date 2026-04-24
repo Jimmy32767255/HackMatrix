@@ -942,6 +942,38 @@ void Renderer::renderPopup(WaylandApp::Component& popup, WaylandApp::Component& 
 }
 
 void
+bool isPointInFrustum(const glm::vec3& point, const Frustum& frustum)
+{
+  if (frustum.leftFace.getSignedDistanceToPlane(point) < 0) return false;
+  if (frustum.rightFace.getSignedDistanceToPlane(point) < 0) return false;
+  if (frustum.bottomFace.getSignedDistanceToPlane(point) < 0) return false;
+  if (frustum.topFace.getSignedDistanceToPlane(point) < 0) return false;
+  if (frustum.nearFace.getSignedDistanceToPlane(point) < 0) return false;
+  if (frustum.farFace.getSignedDistanceToPlane(point) < 0) return false;
+  return true;
+}
+
+bool isAabbInFrustum(const glm::vec3& center, const glm::vec3& halfExtents, const Frustum& frustum)
+{
+  glm::vec3 corners[] = {
+    center + glm::vec3(-halfExtents.x, -halfExtents.y, -halfExtents.z),
+    center + glm::vec3(halfExtents.x, -halfExtents.y, -halfExtents.z),
+    center + glm::vec3(-halfExtents.x, halfExtents.y, -halfExtents.z),
+    center + glm::vec3(halfExtents.x, halfExtents.y, -halfExtents.z),
+    center + glm::vec3(-halfExtents.x, -halfExtents.y, halfExtents.z),
+    center + glm::vec3(halfExtents.x, -halfExtents.y, halfExtents.z),
+    center + glm::vec3(-halfExtents.x, halfExtents.y, halfExtents.z),
+    center + glm::vec3(halfExtents.x, halfExtents.y, halfExtents.z),
+  };
+  for (const auto& corner : corners) {
+    if (isPointInFrustum(corner, frustum)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+void
 Renderer::renderApps()
 {
   auto lookedAtAppEntity = windowManagerSpace->getLookedAtApp();
@@ -964,6 +996,8 @@ Renderer::renderApps()
     1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
   glEnableVertexAttribArray(1);
   glDisable(GL_CULL_FACE);
+
+  Frustum frustum = camera->createFrustum();
  
 
   auto bindAppTexture = [&](WaylandApp* app) {
@@ -1021,6 +1055,12 @@ Renderer::renderApps()
   for (auto [entity, comp, positionable] : wlPositionable.each()) {
     auto* app = comp.app.get();
     if (!app) {
+      continue;
+    }
+
+    // Frustum culling: skip apps that are outside the camera view
+    glm::vec3 halfExtents(0.5f * positionable.scale, 0.37f * positionable.scale, 0.1f);
+    if (!isAabbInFrustum(positionable.pos, halfExtents, frustum)) {
       continue;
     }
 
