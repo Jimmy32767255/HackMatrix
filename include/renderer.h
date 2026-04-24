@@ -36,11 +36,19 @@ enum RenderPerspective
 
 class Cube;
 class World;
+class Model;
 class Renderer
 {
   shared_ptr<blocks::TexturePack> texturePack;
   GlBuffer APP_VBO;
   GlVertexArray APP_VAO;
+
+  std::unique_ptr<Model> backgroundModel;
+  bool backgroundEnabled = false;
+  glm::vec3 backgroundPosition = glm::vec3(0, 0, -10);
+  float backgroundScale = 1.0f;
+  void initBackgroundModel();
+  void renderBackgroundModel();
 
   GlBuffer DIRECT_RENDER_VBO;
   GlVertexArray DIRECT_RENDER_VAO;

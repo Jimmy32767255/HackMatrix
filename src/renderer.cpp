@@ -13,6 +13,7 @@
 #include "screen.h"
 #include "components/Bootable.h"
 #include "time_utils.h"
+#include "Config.h"
 #include <iostream>
 #include <vector>
 #include <algorithm>
@@ -418,6 +419,49 @@ Renderer::Renderer(shared_ptr<EntityRegistry> registry,
   } else {
     glLineWidth(1.0f);
   }
+  initBackgroundModel();
+}
+
+void
+Renderer::initBackgroundModel()
+{
+  try {
+    backgroundEnabled = Config::singleton()->get<bool>("background.enabled");
+    if (backgroundEnabled) {
+      std::string modelPath = Config::singleton()->get<std::string>("background.model_path");
+      if (!modelPath.empty()) {
+        backgroundModel = std::make_unique<Model>(modelPath);
+        auto posConfig = Config::singleton()->get<std::vector<float>>("background.position");
+        if (posConfig.size() >= 3) {
+          backgroundPosition = glm::vec3(posConfig[0], posConfig[1], posConfig[2]);
+        }
+        backgroundScale = Config::singleton()->get<float>("background.scale");
+        logger->info("Background model loaded from: {}", modelPath);
+      } else {
+        logger->warn("Background model path is empty");
+        backgroundEnabled = false;
+      }
+    }
+  } catch (...) {
+    backgroundEnabled = false;
+    logger->debug("Background model not configured or disabled");
+  }
+}
+
+void
+Renderer::renderBackgroundModel()
+{
+  if (!backgroundEnabled || !backgroundModel) {
+    return;
+  }
+  shader->setBool("isModel", true);
+  glm::mat4 model = glm::mat4(1.0f);
+  model = glm::translate(model, backgroundPosition);
+  model = glm::scale(model, glm::vec3(backgroundScale));
+  shader->setMatrix4("model", model);
+  shader->setMatrix3("normalMatrix", glm::mat3(glm::transpose(glm::inverse(model))));
+  backgroundModel->Draw(*shader);
+  shader->setBool("isModel", false);
 }
 
 void
@@ -1299,6 +1343,9 @@ Renderer::render(RenderPerspective perspective,
   }
   updateShaderUniforms();
   lightUniforms(perspective, fromLight);
+  if (perspective == CAMERA) {
+    renderBackgroundModel();
+  }
   renderModels(perspective);
   if (perspective == CAMERA) {
     renderVoxels();
