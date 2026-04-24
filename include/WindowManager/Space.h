@@ -40,5 +40,8 @@ namespace WindowManager {
     void addApp(entt::entity, bool = false);
     void removeApp(entt::entity);
     void toggleAppSelect(entt::entity);
+
+    bool checkCollision(entt::entity app, const glm::vec3& pos, float scale);
+    bool findNonCollidingPosition(entt::entity app, glm::vec3& pos, float scale);
   };
 }

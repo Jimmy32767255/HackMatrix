@@ -414,4 +414,94 @@ Space::toggleAppSelect(entt::entity appEntt)
     logger->error("attempted to select a non existent app");
   }
 }
+
+bool
+Space::checkCollision(entt::entity app, const glm::vec3& pos, float scale)
+{
+  float appWidth = 1.0f;
+  float appHeight = 0.74f;
+
+  AppSurface* surface = nullptr;
+  if (registry->all_of<X11App>(app)) {
+    surface = &registry->get<X11App>(app);
+  } else if (registry->all_of<WaylandApp::Component>(app)) {
+    auto& comp = registry->get<WaylandApp::Component>(app);
+    surface = comp.app.get();
+  }
+  if (surface) {
+    float aspectRatio = static_cast<float>(surface->getWidth()) / 
+                        static_cast<float>(surface->getHeight());
+    appHeight = 0.74f * scale;
+    appWidth = appHeight * aspectRatio;
+  } else {
+    appWidth *= scale;
+    appHeight *= scale;
+  }
+
+  auto view = registry->view<Positionable>();
+  for (auto [entity, positionable] : view.each()) {
+    if (entity == app) continue;
+
+    float otherWidth = 1.0f;
+    float otherHeight = 0.74f;
+    float otherScale = positionable.scale;
+
+    AppSurface* otherSurface = nullptr;
+    if (registry->all_of<X11App>(entity)) {
+      otherSurface = &registry->get<X11App>(entity);
+    } else if (registry->all_of<WaylandApp::Component>(entity)) {
+      auto& comp = registry->get<WaylandApp::Component>(entity);
+      otherSurface = comp.app.get();
+    }
+    if (otherSurface) {
+      float aspectRatio = static_cast<float>(otherSurface->getWidth()) / 
+                          static_cast<float>(otherSurface->getHeight());
+      otherHeight = 0.74f * otherScale;
+      otherWidth = otherHeight * aspectRatio;
+    } else {
+      otherWidth *= otherScale;
+      otherHeight *= otherScale;
+    }
+
+    float dx = std::abs(pos.x - positionable.pos.x);
+    float dy = std::abs(pos.y - positionable.pos.y);
+    float dz = std::abs(pos.z - positionable.pos.z);
+
+    float minDistX = (appWidth + otherWidth) / 2.0f + 0.1f;
+    float minDistY = (appHeight + otherHeight) / 2.0f + 0.1f;
+    float minDistZ = 0.2f;
+
+    if (dx < minDistX && dy < minDistY && dz < minDistZ) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool
+Space::findNonCollidingPosition(entt::entity app, glm::vec3& pos, float scale)
+{
+  if (!checkCollision(app, pos, scale)) {
+    return true;
+  }
+
+  float step = 0.3f;
+  int maxAttempts = 50;
+  std::vector<glm::vec2> directions = {
+    {1, 0}, {-1, 0}, {0, 1}, {0, -1},
+    {1, 1}, {1, -1}, {-1, 1}, {-1, -1}
+  };
+
+  for (int i = 1; i <= maxAttempts; i++) {
+    for (const auto& dir : directions) {
+      glm::vec3 newPos = pos + glm::vec3(dir.x * step * i, dir.y * step * i, 0);
+      if (!checkCollision(app, newPos, scale)) {
+        pos = newPos;
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
 } // namespace WindowManager

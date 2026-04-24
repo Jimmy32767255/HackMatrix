@@ -717,6 +717,12 @@ entt::entity WindowManager::registerWaylandApp(std::shared_ptr<WaylandApp> app,
     rot = glm::degrees(glm::eulerAngles(finalRotation));
     pos = camera->position + finalRotation * glm::vec3(0, 0, -dist);
   }
+
+  // Avoid collision with existing windows
+  if (space) {
+    space->findNonCollidingPosition(entity, pos, 1.0f);
+  }
+
   registry->emplace<Positionable>(entity, pos, glm::vec3(0.0f), rot, 1.0f);
   // Mark as damaged so renderer updates transforms.
   if (auto* p = registry->try_get<Positionable>(entity)) {
