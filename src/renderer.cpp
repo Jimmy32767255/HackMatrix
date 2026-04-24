@@ -1131,6 +1131,7 @@ Renderer::renderApps()
       glBindTexture(GL_TEXTURE_2D, backfaceTexture);
       shader->setBool("appTransparent", true);
       shader->setBool("flipTextureX", true);
+      shader->setBool("isBackface", true);
       shader->setMatrix4("model", model);
       shader->setMatrix4("bootableScale", app->getHeightScalar());
       glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -1140,6 +1141,7 @@ Renderer::renderApps()
       }
       shader->setBool("appTransparent", app->hasAlphaChannel());
       shader->setBool("flipTextureX", false);
+      shader->setBool("isBackface", false);
       shader->setMatrix4("model", model);
       shader->setMatrix4("bootableScale", app->getHeightScalar());
       glDrawArrays(GL_TRIANGLES, 0, 6);

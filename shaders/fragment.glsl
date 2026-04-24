@@ -24,6 +24,7 @@ uniform bool isLight;
 uniform bool appTransparent;
 uniform bool directRender;
 uniform bool flipTextureX;
+uniform bool isBackface;
 uniform bool isVoxel;
 uniform bool voxelsEnabled;
 uniform float time;
@@ -82,11 +83,12 @@ vec4 floorEffect( vec2 fragCoord ) {
 
 vec4 colorFromTexture(sampler2D tex, vec2 coord) {
   vec2 sampleCoord = coord;
-  if(!directRender) {
+  if(!directRender && !isBackface) {
     // Flip Y for in-world quads; directRender already uses screen space.
+    // Don't flip for backface rendering since it's viewed from behind.
     sampleCoord = vec2(coord.x, 1.0 - coord.y);
   }
-  // Flip X if viewing from backface
+  // Flip X if viewing from backface (to correct horizontal mirroring)
   if(flipTextureX) {
     sampleCoord.x = 1.0 - sampleCoord.x;
   }
