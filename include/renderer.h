@@ -50,6 +50,10 @@ class Renderer
   void initBackgroundModel();
   void renderBackgroundModel();
 
+  unsigned int backfaceTexture = 0;
+  bool backfaceTextureEnabled = false;
+  void initBackfaceTexture();
+
   GlBuffer DIRECT_RENDER_VBO;
   GlVertexArray DIRECT_RENDER_VAO;
   GlBuffer CURSOR_VBO;

@@ -420,6 +420,7 @@ Renderer::Renderer(shared_ptr<EntityRegistry> registry,
     glLineWidth(1.0f);
   }
   initBackgroundModel();
+  initBackfaceTexture();
 }
 
 void
@@ -445,6 +446,44 @@ Renderer::initBackgroundModel()
   } catch (...) {
     backgroundEnabled = false;
     logger->debug("Background model not configured or disabled");
+  }
+}
+
+void
+Renderer::initBackfaceTexture()
+{
+  try {
+    backfaceTextureEnabled = Config::singleton()->get<bool>("backface_texture.enabled");
+    if (backfaceTextureEnabled) {
+      std::string texturePath = Config::singleton()->get<std::string>("backface_texture.texture_path");
+      if (!texturePath.empty()) {
+        int width, height, nrChannels;
+        stbi_set_flip_vertically_on_load(true);
+        unsigned char* data = stbi_load(texturePath.c_str(), &width, &height, &nrChannels, 0);
+        if (data) {
+          glGenTextures(1, &backfaceTexture);
+          glBindTexture(GL_TEXTURE_2D, backfaceTexture);
+          glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+          glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+          glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+          glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+          GLenum format = nrChannels == 4 ? GL_RGBA : GL_RGB;
+          glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+          glGenerateMipmap(GL_TEXTURE_2D);
+          stbi_image_free(data);
+          logger->info("Backface texture loaded from: {}", texturePath);
+        } else {
+          logger->warn("Failed to load backface texture from: {}", texturePath);
+          backfaceTextureEnabled = false;
+        }
+      } else {
+        logger->warn("Backface texture path is empty");
+        backfaceTextureEnabled = false;
+      }
+    }
+  } catch (...) {
+    backfaceTextureEnabled = false;
+    logger->debug("Backface texture not configured or disabled");
   }
 }
 
@@ -1064,17 +1103,30 @@ Renderer::renderApps()
       continue;
     }
 
+    // Check if window is facing away from camera (backface)
+    glm::vec3 viewDir = glm::normalize(camera->getPos() - positionable.pos);
+    glm::vec3 normal = glm::vec3(positionable.modelMatrix[2][0], positionable.modelMatrix[2][1], positionable.modelMatrix[2][2]);
+    bool isBackface = glm::dot(viewDir, normal) > 0.0f;
+
     // Upload latest buffer only when a new commit arrived, then bind to the
     // app's dedicated unit to avoid stale or shared textures when multiple
     // Wayland apps are present.
     if (app->needsTextureImport()) {
       app->appTexture();
     }
-    if (!bindAppTexture(app)) {
-      continue;
+
+    if (isBackface && backfaceTextureEnabled && backfaceTexture != 0) {
+      // Render backface texture instead of app content
+      glActiveTexture(GL_TEXTURE0);
+      glBindTexture(GL_TEXTURE_2D, backfaceTexture);
+      shader->setBool("appTransparent", true);
+    } else {
+      if (!bindAppTexture(app)) {
+        continue;
+      }
+      shader->setBool("appTransparent", app->hasAlphaChannel());
     }
-    // Keep the in-world quad at the positionable's size; just track the app's
-    // pixel size for logging and aspect ratio.
+
     float sx = static_cast<float>(app->getWidth()) /
                static_cast<float>(SCREEN_WIDTH);
     float sy = static_cast<float>(app->getHeight()) /
@@ -1082,7 +1134,6 @@ Renderer::renderApps()
     glm::mat4 model = positionable.modelMatrix;
     shader->setMatrix4("model", model);
     shader->setMatrix4("bootableScale", app->getHeightScalar());
-    shader->setBool("appTransparent", app->hasAlphaChannel());
     glDrawArrays(GL_TRIANGLES, 0, 6);
 
 

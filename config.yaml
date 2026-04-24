@@ -7,6 +7,9 @@ background:
   model_path: "models/background.obj"
   position: [0, 0, -10]
   scale: 1.0
+backface_texture:
+  enabled: false
+  texture_path: "images/backface.png"
 key_mappings:
   screenshot: "p"
   toggle_cursor: "f"
