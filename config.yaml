@@ -10,6 +10,9 @@ background:
 backface_texture:
   enabled: false
   texture_path: "images/backface.png"
+environment:
+  dark_mode: true
+  wayland_display: "wayland-0"
 key_mappings:
   screenshot: "p"
   toggle_cursor: "f"

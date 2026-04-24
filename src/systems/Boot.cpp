@@ -1,5 +1,6 @@
 #include "systems/Boot.h"
 #include "components/Bootable.h"
+#include "Config.h"
 #include <optional>
 #include <signal.h>
 
@@ -7,6 +8,9 @@
 #include <iostream>
 #include <fstream>
 #include <thread>
+#include <map>
+#include <sstream>
+#include <cstring>
 
 bool
 isShellScript(const std::string& filename)
@@ -47,9 +51,41 @@ getShPID(char* pidfile)
   return -1;
 }
 
+char**
+buildEnvWithCustomVars(char** envp)
+{
+  std::vector<std::string> customEnvVars;
+  try {
+    auto envConfig = Config::singleton()->get<std::map<std::string, std::string>>("environment");
+    for (const auto& [key, value] : envConfig) {
+      std::string envStr = key + "=" + value;
+      customEnvVars.push_back(envStr);
+    }
+  } catch (...) {
+    // Environment config not found, continue with original envp
+  }
+
+  std::vector<char*> newEnvp;
+  for (char** env = envp; *env != nullptr; ++env) {
+    newEnvp.push_back(*env);
+  }
+
+  for (auto& envStr : customEnvVars) {
+    char* envCopy = new char[envStr.size() + 1];
+    std::strcpy(envCopy, envStr.c_str());
+    newEnvp.push_back(envCopy);
+  }
+
+  newEnvp.push_back(nullptr);
+  char** result = new char*[newEnvp.size()];
+  std::copy(newEnvp.begin(), newEnvp.end(), result);
+  return result;
+}
+
 int
 forkApp(string cmd, char** envp, string args)
 {
+  char** customEnvp = buildEnvWithCustomVars(envp);
 
   char pidfile[] = "/tmp/pid.XXXXXX"; // Template for temporary file name
   if (isShellScript(cmd)) {
@@ -79,12 +115,17 @@ forkApp(string cmd, char** envp, string args)
       argv.push_back(nullptr); // Null-terminate the array
 
       // Execute command with arguments
-      execve(cmd.c_str(), argv.data(), envp);
+      execve(cmd.c_str(), argv.data(), customEnvp);
     } else {
-      execle(cmd.c_str(), cmd.c_str(), NULL, envp);
+      execle(cmd.c_str(), cmd.c_str(), NULL, customEnvp);
     }
     exit(0);
   } else {
+    for (char** env = customEnvp; *env != nullptr; ++env) {
+      delete[] *env;
+    }
+    delete[] customEnvp;
+
     if (isShellScript(cmd)) {
       auto shellPid = getShPID(pidfile);
       return shellPid;
