@@ -681,6 +681,72 @@ Controls::handleKeySym(xkb_keysym_t sym,
     return resp;
   }
 
+  if (sym == controlMappings.getKey("toggle_meshing")) {
+    if (debounce(lastKeyPressTime)) {
+      world->mesh(false);
+      log_controls("controls: mesh=false\n");
+      resp.consumed = true;
+      return resp;
+    }
+  }
+
+  if (sym == controlMappings.getKey("toggle_wireframe")) {
+    if (debounce(lastKeyPressTime)) {
+      renderer->toggleWireframe();
+      log_controls("controls: wireframe toggle\n");
+      resp.consumed = true;
+      return resp;
+    }
+  }
+
+  if (sym == controlMappings.getKey("save")) {
+    if (debounce(lastKeyPressTime)) {
+      auto t = std::time(nullptr);
+      auto tm = *std::localtime(&t);
+      stringstream filenameSS;
+      filenameSS << "saves/" << std::put_time(&tm, "%Y-%m-%d:%H-%M-%S.save");
+      world->save(filenameSS.str());
+      log_controls("controls: save %s\n", filenameSS.str().c_str());
+      resp.consumed = true;
+      return resp;
+    }
+  }
+
+  if (sym == controlMappings.getKey("menu")) {
+    if (debounce(lastKeyPressTime)) {
+      log_controls("controls: menu\n");
+      resp.clearInputForces = true;
+      wm->menu();
+      resp.blockClientDelivery = true;
+      resp.consumed = true;
+      return resp;
+    }
+  }
+
+  if (sym == controlMappings.getKey("speed_up")) {
+    if (debounce(lastKeyPressTime)) {
+      camera->changeSpeed(0.05f);
+      resp.consumed = true;
+      return resp;
+    }
+  }
+
+  if (sym == controlMappings.getKey("speed_down")) {
+    if (debounce(lastKeyPressTime)) {
+      camera->changeSpeed(-0.05f);
+      resp.consumed = true;
+      return resp;
+    }
+  }
+
+  if (sym == controlMappings.getKey("reset_speed")) {
+    if (shiftHeld && debounce(lastKeyPressTime)) {
+      camera->resetSpeed();
+      resp.consumed = true;
+      return resp;
+    }
+  }
+
   switch (sym) {
     case XKB_KEY_Delete:
       throw "errorEscape";
@@ -707,22 +773,6 @@ Controls::handleKeySym(xkb_keysym_t sym,
         resp.consumed = true;
       }
       break;
-    case XKB_KEY_m:
-    case XKB_KEY_M:
-      if (debounce(lastKeyPressTime)) {
-        world->mesh(false);
-        log_controls("controls: mesh=false\n");
-        resp.consumed = true;
-      }
-      break;
-    case XKB_KEY_slash:
-    case XKB_KEY_question:
-      if (debounce(lastKeyPressTime)) {
-        renderer->toggleWireframe();
-        log_controls("controls: wireframe toggle\n");
-        resp.consumed = true;
-      }
-      break;
     case XKB_KEY_e:
     case XKB_KEY_E:
       // Selection placeholder for parity; no-op beyond debounce.
@@ -737,18 +787,6 @@ Controls::handleKeySym(xkb_keysym_t sym,
         moveTo(newPos, std::nullopt, 0.5, [this]() -> void {
           world->action(OPEN_SELECTION_CODE);
         });
-        resp.consumed = true;
-      }
-      break;
-    case XKB_KEY_l:
-    case XKB_KEY_L:
-      if (debounce(lastKeyPressTime)) {
-        auto t = std::time(nullptr);
-        auto tm = *std::localtime(&t);
-        stringstream filenameSS;
-        filenameSS << "saves/" << std::put_time(&tm, "%Y-%m-%d:%H-%M-%S.save");
-        world->save(filenameSS.str());
-        log_controls("controls: save %s\n", filenameSS.str().c_str());
         resp.consumed = true;
       }
       break;
