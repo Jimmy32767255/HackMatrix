@@ -97,13 +97,6 @@ float appVertices[] = {
   -0.5f, HEIGHT,  0, 0.0f, 1.0f, -0.5f, -HEIGHT, 0, 0.0f, 0.0f,
 };
 
-// Backface vertices with flipped texture coordinates (both X and Y)
-float backfaceVertices[] = {
-  -0.5f, -HEIGHT, 0, 1.0f, 1.0f, 0.5f,  -HEIGHT, 0, 0.0f, 1.0f,
-  0.5f,  HEIGHT,  0, 0.0f, 0.0f, 0.5f,  HEIGHT,  0, 0.0f, 0.0f,
-  -0.5f, HEIGHT,  0, 1.0f, 0.0f, -0.5f, -HEIGHT, 0, 1.0f, 1.0f,
-};
-
 float directRenderQuad[] = {
   -1, -1, 0, 0, 0, 1,  -1, 0, 1, 0, 1,  1,  0, 1, 1,
   1,  1,  0, 1, 1, -1, 1,  0, 0, 1, -1, -1, 0, 0, 0
@@ -131,9 +124,6 @@ Renderer::genGlResources()
 {
   APP_VAO.create();
   APP_VBO.create(GL_ARRAY_BUFFER);
-
-  BACKFACE_VAO.create();
-  BACKFACE_VBO.create(GL_ARRAY_BUFFER);
 
   DIRECT_RENDER_VAO.create();
   DIRECT_RENDER_VBO.create(GL_ARRAY_BUFFER);
@@ -200,18 +190,6 @@ Renderer::setupVertexAttributePointers()
     1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
   glEnableVertexAttribArray(1);
 
-  // backface - same as APP_VAO but with flipped texture coordinates
-  glBindVertexArray(BACKFACE_VAO);
-  glBindBuffer(GL_ARRAY_BUFFER, BACKFACE_VBO);
-  // position attribute
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
-  glEnableVertexAttribArray(0);
-
-  // texture coord attribute (already flipped in backfaceVertices)
-  glVertexAttribPointer(
-    1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-  glEnableVertexAttribArray(1);
-
   // direct render
   glBindVertexArray(DIRECT_RENDER_VAO);
   glBindBuffer(GL_ARRAY_BUFFER, DIRECT_RENDER_VBO);
@@ -268,10 +246,6 @@ Renderer::fillBuffers()
   glBindBuffer(GL_ARRAY_BUFFER, APP_VBO);
   glBufferData(
     GL_ARRAY_BUFFER, sizeof(appVertices), appVertices, GL_STATIC_DRAW);
-
-  glBindBuffer(GL_ARRAY_BUFFER, BACKFACE_VBO);
-  glBufferData(
-    GL_ARRAY_BUFFER, sizeof(backfaceVertices), backfaceVertices, GL_STATIC_DRAW);
 
   glBindBuffer(GL_ARRAY_BUFFER, DIRECT_RENDER_VBO);
   glBufferData(GL_ARRAY_BUFFER,
@@ -485,8 +459,8 @@ Renderer::initBackfaceTexture()
       std::string texturePath = Config::singleton()->get<std::string>("backface_texture.texture_path");
       if (!texturePath.empty()) {
         int width, height, nrChannels;
-        // Don't flip backface texture vertically since it's viewed from behind
-        stbi_set_flip_vertically_on_load(false);
+        // Flip backface texture vertically to match app texture loading
+        stbi_set_flip_vertically_on_load(true);
         unsigned char* data = stbi_load(texturePath.c_str(), &width, &height, &nrChannels, 0);
         if (data) {
           glGenTextures(1, &backfaceTexture);
@@ -1156,13 +1130,12 @@ Renderer::renderApps()
       glActiveTexture(GL_TEXTURE0);
       glBindTexture(GL_TEXTURE_2D, backfaceTexture);
       shader->setBool("appTransparent", true);
-      shader->setMatrix4("model", model);
+      // Flip horizontally and vertically to correct mirroring when viewed from behind
+      // When viewing from behind, texture appears mirrored both horizontally and vertically
+      glm::mat4 flipMatrix = glm::scale(glm::mat4(1.0f), glm::vec3(-1.0f, -1.0f, 1.0f));
+      shader->setMatrix4("model", model * flipMatrix);
       shader->setMatrix4("bootableScale", app->getHeightScalar());
-      // Use BACKFACE_VAO which has flipped texture coordinates for correct orientation
-      glBindVertexArray(BACKFACE_VAO);
       glDrawArrays(GL_TRIANGLES, 0, 6);
-      // Restore APP_VAO for subsequent draws
-      glBindVertexArray(APP_VAO);
     } else {
       if (!bindAppTexture(app)) {
         continue;
