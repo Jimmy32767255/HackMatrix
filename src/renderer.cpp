@@ -1104,9 +1104,12 @@ Renderer::renderApps()
     }
 
     // Check if window is facing away from camera (backface)
+    // viewDir: direction from window to camera
+    // normal: window's surface normal (from modelMatrix column 2)
+    // When dot(viewDir, normal) < 0: normal points away from camera = backface
     glm::vec3 viewDir = glm::normalize(camera->position - positionable.pos);
     glm::vec3 normal = glm::vec3(positionable.modelMatrix[2][0], positionable.modelMatrix[2][1], positionable.modelMatrix[2][2]);
-    bool isBackface = glm::dot(viewDir, normal) > 0.0f;
+    bool isBackface = glm::dot(viewDir, normal) < 0.0f;
 
     // Upload latest buffer only when a new commit arrived, then bind to the
     // app's dedicated unit to avoid stale or shared textures when multiple
