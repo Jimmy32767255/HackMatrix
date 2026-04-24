@@ -81,6 +81,8 @@ public:
   virtual vector<optional<entt::entity>> getAppsWithHotKeys() = 0;
   virtual void swapHotKeys(int a, int b) = 0;
   virtual int findAppsHotKey(entt::entity theApp) = 0;
+  virtual void resizeWindow(entt::entity app, int width, int height) = 0;
+  virtual void scaleWindow(entt::entity app, float scaleFactor) = 0;
 };
 
 using WindowManagerPtr = std::shared_ptr<WindowManagerInterface>;
@@ -118,6 +120,8 @@ class WindowManager : public WindowManagerInterface
   bool continueRunning = true;
   void removeAppForWindow(Window);
   void onMapRequest(XMapRequestEvent);
+  void resizeWindow(entt::entity app, int width, int height) override;
+  void scaleWindow(entt::entity app, float scaleFactor) override;
   std::shared_ptr<spdlog::logger> logger;
   void setupLogger();
   void assignHotkeySlot(entt::entity ent);

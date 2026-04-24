@@ -7,3 +7,5 @@ key_mappings:
   toggle_cursor: "f"
   quit: "escape"
   super_modifier: "super"
+  window_larger: "bracketright"
+  window_smaller: "bracketleft"

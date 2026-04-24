@@ -587,6 +587,21 @@ Controls::handleKeySym(xkb_keysym_t sym,
     return resp;
   }
 
+  if (modifierHeld && wm && wm->getCurrentlyFocusedApp().has_value()) {
+    if (sym == controlMappings.getKey("window_larger")) {
+      wm->scaleWindow(wm->getCurrentlyFocusedApp().value(), 1.1f);
+      resp.blockClientDelivery = true;
+      resp.consumed = true;
+      return resp;
+    }
+    if (sym == controlMappings.getKey("window_smaller")) {
+      wm->scaleWindow(wm->getCurrentlyFocusedApp().value(), 0.9f);
+      resp.blockClientDelivery = true;
+      resp.consumed = true;
+      return resp;
+    }
+  }
+
   /*
   if ((sym == XKB_KEY_r) && debounce(lastKeyPressTime)) {
     resp.clearInputForces = true;

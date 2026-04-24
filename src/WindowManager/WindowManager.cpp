@@ -485,6 +485,44 @@ void WindowManager::unfocusApp() {
   WL_WM_LOG("WM: unfocusApp (x11) ent=%d\n", (int)entt::to_integral(ent));
 }
 
+void WindowManager::resizeWindow(entt::entity app, int width, int height) {
+  if (!registry || !registry->valid(app)) {
+    return;
+  }
+  if (registry->all_of<WaylandApp::Component>(app)) {
+    auto& comp = registry->get<WaylandApp::Component>(app);
+    if (comp.app) {
+      comp.app->requestSize(width, height);
+    }
+  } else if (registry->all_of<X11App>(app)) {
+    auto& x11app = registry->get<X11App>(app);
+    x11app.resize(width, height);
+  }
+  if (auto* positionable = registry->try_get<Positionable>(app)) {
+    positionable->damage();
+  }
+}
+
+void WindowManager::scaleWindow(entt::entity app, float scaleFactor) {
+  if (!registry || !registry->valid(app)) {
+    return;
+  }
+  AppSurface* surface = nullptr;
+  if (registry->all_of<WaylandApp::Component>(app)) {
+    auto& comp = registry->get<WaylandApp::Component>(app);
+    if (comp.app) {
+      surface = comp.app.get();
+    }
+  } else if (registry->all_of<X11App>(app)) {
+    surface = &registry->get<X11App>(app);
+  }
+  if (surface) {
+    int newWidth = static_cast<int>(surface->getWidth() * scaleFactor);
+    int newHeight = static_cast<int>(surface->getHeight() * scaleFactor);
+    resizeWindow(app, newWidth, newHeight);
+  }
+}
+
 
 bool
 WindowManager::computeFocusedSpawn(entt::entity newApp, glm::vec3& pos, glm::vec3& rot) const
