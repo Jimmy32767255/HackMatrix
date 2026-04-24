@@ -29,6 +29,7 @@ public:
   virtual std::array<int, 2> getPosition() const = 0;
   virtual glm::mat4 getHeightScalar() const = 0;
   virtual int getTextureId() const = 0;
+  virtual bool hasAlphaChannel() const { return false; }
 
   virtual std::string getWindowName() = 0;
   virtual int getPID() = 0;

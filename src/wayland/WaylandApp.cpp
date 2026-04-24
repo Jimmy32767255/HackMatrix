@@ -523,6 +523,10 @@ WaylandApp::appTexture()
     return;
   }
 
+  hasAlpha = (format == DRM_FORMAT_ARGB8888 || format == DRM_FORMAT_ABGR8888 ||
+              format == DRM_FORMAT_BGRA8888 || format == DRM_FORMAT_RGBA8888 ||
+              format == DRM_FORMAT_ARGB2101010 || format == DRM_FORMAT_ABGR2101010);
+
   // Fast path: directly upload all common 32-bit formats without swizzle when
   // stride matches. This avoids per-pixel conversion for repaint-heavy apps.
   auto try_direct_upload = [&]() -> bool {

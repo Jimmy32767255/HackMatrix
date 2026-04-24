@@ -1082,7 +1082,7 @@ Renderer::renderApps()
     glm::mat4 model = positionable.modelMatrix;
     shader->setMatrix4("model", model);
     shader->setMatrix4("bootableScale", app->getHeightScalar());
-    shader->setBool("appTransparent", false);
+    shader->setBool("appTransparent", app->hasAlphaChannel());
     glDrawArrays(GL_TRIANGLES, 0, 6);
 
 

@@ -60,6 +60,7 @@ class WaylandApp : public AppSurface {
   EGLImageKHR importedImage = EGL_NO_IMAGE_KHR;
   bool needsImport = false;
   bool importedBufferLocked = false;
+  bool hasAlpha = false;
   unique_ptr<Texture> texture;
 
 public:
@@ -138,6 +139,7 @@ public:
   bool supportsDirectRender() const { return importedImage != EGL_NO_IMAGE_KHR; }
   wlr_surface* getSurface() const { return surface; }
   bool needsTextureImport() const { return needsImport; }
+  bool hasAlphaChannel() const override { return hasAlpha; }
 
   std::string getWindowName() override { return title; }
   int getPID() override { return clientPid; }
