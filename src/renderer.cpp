@@ -14,6 +14,7 @@
 #include "components/Bootable.h"
 #include "time_utils.h"
 #include "Config.h"
+#include "stb/stb_image.h"
 #include <iostream>
 #include <vector>
 #include <algorithm>
@@ -980,7 +981,6 @@ void Renderer::renderPopup(WaylandApp::Component& popup, WaylandApp::Component& 
     glBindFramebuffer(GL_READ_FRAMEBUFFER, prevReadFbo);
 }
 
-void
 bool isPointInFrustum(const glm::vec3& point, const Frustum& frustum)
 {
   if (frustum.leftFace.getSignedDistanceToPlane(point) < 0) return false;
@@ -1104,7 +1104,7 @@ Renderer::renderApps()
     }
 
     // Check if window is facing away from camera (backface)
-    glm::vec3 viewDir = glm::normalize(camera->getPos() - positionable.pos);
+    glm::vec3 viewDir = glm::normalize(camera->position - positionable.pos);
     glm::vec3 normal = glm::vec3(positionable.modelMatrix[2][0], positionable.modelMatrix[2][1], positionable.modelMatrix[2][2]);
     bool isBackface = glm::dot(viewDir, normal) > 0.0f;
 

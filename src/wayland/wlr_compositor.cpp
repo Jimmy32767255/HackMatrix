@@ -560,6 +560,7 @@ handle_new_xdg_surface(wl_listener* listener, void* data)
   };
   wl_signal_add(&xdg_surface->surface->events.map, &handle->map);
 
+  #ifdef HAVE_XDG_REQUEST_CONFIGURE
   handle->request_configure.notify = [](wl_listener* listener, void* data) {
     auto* handle = wl_container_of(listener, static_cast<XdgSurfaceHandle*>(nullptr), request_configure);
     auto* event = static_cast<wlr_xdg_toplevel_request_configure_event*>(data);
@@ -576,6 +577,7 @@ handle_new_xdg_surface(wl_listener* listener, void* data)
   if (xdg_surface->role == WLR_XDG_SURFACE_ROLE_TOPLEVEL && xdg_surface->toplevel) {
     wl_signal_add(&xdg_surface->toplevel->events.request_configure, &handle->request_configure);
   }
+#endif
 
   handle->destroy.notify = [](wl_listener* listener, void* data) {
     auto* handle = wl_container_of(listener, static_cast<XdgSurfaceHandle*>(nullptr), destroy);
@@ -583,7 +585,9 @@ handle_new_xdg_surface(wl_listener* listener, void* data)
     handle->xdg = nullptr;
     wl_list_remove(&handle->map.link);
     wl_list_remove(&handle->commit.link);
+#ifdef HAVE_XDG_REQUEST_CONFIGURE
     wl_list_remove(&handle->request_configure.link);
+#endif
     wl_list_remove(&handle->destroy.link);
     delete handle;
   };

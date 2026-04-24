@@ -170,7 +170,9 @@ struct XdgSurfaceHandle {
   wl_listener commit;
   wl_listener map;
   wl_listener destroy;
+#ifdef HAVE_XDG_REQUEST_CONFIGURE
   wl_listener request_configure;
+#endif
 };
 
 struct WlrServer {
