@@ -1130,10 +1130,8 @@ Renderer::renderApps()
       glActiveTexture(GL_TEXTURE0);
       glBindTexture(GL_TEXTURE_2D, backfaceTexture);
       shader->setBool("appTransparent", true);
-      // Flip horizontally and vertically to correct mirroring when viewed from behind
-      // When viewing from behind, texture appears mirrored both horizontally and vertically
-      glm::mat4 flipMatrix = glm::scale(glm::mat4(1.0f), glm::vec3(-1.0f, -1.0f, 1.0f));
-      shader->setMatrix4("model", model * flipMatrix);
+      shader->setBool("flipTextureX", true);
+      shader->setMatrix4("model", model);
       shader->setMatrix4("bootableScale", app->getHeightScalar());
       glDrawArrays(GL_TRIANGLES, 0, 6);
     } else {
@@ -1141,6 +1139,7 @@ Renderer::renderApps()
         continue;
       }
       shader->setBool("appTransparent", app->hasAlphaChannel());
+      shader->setBool("flipTextureX", false);
       shader->setMatrix4("model", model);
       shader->setMatrix4("bootableScale", app->getHeightScalar());
       glDrawArrays(GL_TRIANGLES, 0, 6);

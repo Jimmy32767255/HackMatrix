@@ -23,6 +23,7 @@ uniform bool isDynamicObject;
 uniform bool isLight;
 uniform bool appTransparent;
 uniform bool directRender;
+uniform bool flipTextureX;
 uniform bool isVoxel;
 uniform bool voxelsEnabled;
 uniform float time;
@@ -84,6 +85,10 @@ vec4 colorFromTexture(sampler2D tex, vec2 coord) {
   if(!directRender) {
     // Flip Y for in-world quads; directRender already uses screen space.
     sampleCoord = vec2(coord.x, 1.0 - coord.y);
+  }
+  // Flip X if viewing from backface
+  if(flipTextureX) {
+    sampleCoord.x = 1.0 - sampleCoord.x;
   }
   if(appTransparent) {
     return texture(tex, sampleCoord);
