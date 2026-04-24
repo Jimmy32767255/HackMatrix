@@ -42,6 +42,8 @@ class Renderer
   shared_ptr<blocks::TexturePack> texturePack;
   GlBuffer APP_VBO;
   GlVertexArray APP_VAO;
+  GlBuffer BACKFACE_VBO;
+  GlVertexArray BACKFACE_VAO;
 
   std::unique_ptr<Model> backgroundModel;
   bool backgroundEnabled = false;
