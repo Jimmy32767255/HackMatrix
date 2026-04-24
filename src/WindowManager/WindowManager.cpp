@@ -688,8 +688,6 @@ entt::entity WindowManager::registerWaylandApp(std::shared_ptr<WaylandApp> app,
   // Layer-shell menus should take focus immediately so they receive keystrokes.
   if (layerShell) {
     auto focused = getCurrentlyFocusedApp();
-    // bool allowFocus = (action.parent_surface != nullptr) ||
-    // action.menu_surface;
     unfocusApp();
     focusApp(entity);
   }
@@ -724,6 +722,18 @@ entt::entity WindowManager::registerWaylandApp(std::shared_ptr<WaylandApp> app,
   if (auto* p = registry->try_get<Positionable>(entity)) {
     p->damage();
   }
+
+  // Auto-focus new windows and move camera to view them
+  if (!layerShell) {
+    pendingFocusedApp = entity;
+    if (camera && renderer) {
+      auto moveComplete = moveCameraToApp(entity, "autoFocusNewWindow");
+      if (moveComplete) {
+        focusEntityAfterMove(entity);
+      }
+    }
+  }
+
   WL_WM_LOG("WM: WaylandApp entity=%d size=%dx%d pos=(%.2f, %.2f, %.2f)\n",
             (int)entt::to_integral(entity),
             app->getWidth(),
