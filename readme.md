@@ -9,6 +9,8 @@ A 3D Linux desktop environment (which can also be a game engine)
 
 [Join the discord](https://discord.gg/Kx2rbJ8JCM)
 
+English | [简体中文](docs/zh-CN/readme.md)
+
 ## Usage
 
 ### Navigate the 3d space
